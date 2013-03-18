@@ -95,7 +95,7 @@ class IRelatedItems(IPortletDataProvider):
             vocabulary="plone.app.vocabularies.ReallyUserFriendlyTypes"
         )
     )
-
+    
     show_all_types = schema.Bool(
         title=_(u"Show all types in 'more' link"),
         description=_(u"If selected, the 'more' link will display "
@@ -104,6 +104,12 @@ class IRelatedItems(IPortletDataProvider):
         default=False,
     )
 
+    only_video = schema.Bool(
+        title=_(u"Search only on subject"),
+        description=_(u"If selected, we will search only File and specialy Video."),
+        default=False,
+    )
+    
     only_subject = schema.Bool(
         title=_(u"Search only on subject"),
         description=_(u"If selected, we will search only on content subject."),
@@ -150,6 +156,7 @@ class Assignment(base.Assignment):
                  states=('published',),
                  allowed_types=DEFAULT_ALLOWED_TYPES,
                  #show_recent_items=False,
+                 only_video=False,
                  only_subject=False,
                  show_all_types=False,
                  display_description=True,
@@ -157,6 +164,7 @@ class Assignment(base.Assignment):
                 ):
         self.portlet_title = portlet_title
         self.count = count
+        self.only_video = only_video
         self.states = states
         self.allowed_types = allowed_types
         self.only_subject = only_subject
@@ -375,8 +383,17 @@ class Renderer(base.Renderer):
             query['Subject'] = self.context.Subject()
             if 'SearchableText' in query:
                 del query['SearchableText']
+        
+        if self.data.only_video:
+            query["portal_type"]=('File',)
         results = catalog(**query)
-
+        print len(results)
+        print query
+        if self.data.only_video:
+            for s in results:
+                t=s.getObject()
+                print t.getIcon()
+            
         # filter out the current item
         self.all_results = [res
                             for res in results
@@ -417,6 +434,7 @@ class AddForm(base.AddForm):
             allowed_types=data.get('allowed_types',
                                    DEFAULT_ALLOWED_TYPES),
             #show_recent_items=data.get('show_recent_items', False),
+            only_video=data.get('only_video', False),
             only_subject=data.get('only_subject', False),
             show_all_types=data.get('show_all_types', False),
             display_all_fallback=data.get('display_all_fallback', True),
